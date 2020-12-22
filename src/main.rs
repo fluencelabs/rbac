@@ -19,11 +19,12 @@
 
 use fluence::fce;
 use fluence::WasmLoggerBuilder;
-use std::lazy::OnceCell;
-use std::collections::HashMap;
-use std::collections::hash_map::RandomState;
-use std::sync::Mutex;
 
+use std::collections::HashMap;
+use once_cell::sync::OnceCell;
+use parking_lot::Mutex;
+
+static INSTANCE: OnceCell<Mutex<HashMap<String, Status>>> = OnceCell::new();
 
 #[fce]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -32,10 +33,8 @@ pub struct Status {
 }
 
 fn global_data() -> &'static Mutex<HashMap<String, Status>> {
-    static INSTANCE: OnceCell<Mutex<HashMap<String, Status>>> = OnceCell::new();
     INSTANCE.get_or_init(|| {
-        let mut m = HashMap::new();
-        Mutex::new(m)
+        <_>::default()
     })
 }
 
@@ -48,7 +47,7 @@ pub fn main() {
 
 #[fce]
 pub fn get_status(peer_id: String) -> Status {
-    let data = global_data().lock().unwrap();
+    let data = global_data().lock();
 
     match data.get(peer_id.as_str()) {
         None => {
@@ -62,16 +61,14 @@ pub fn get_status(peer_id: String) -> Status {
 
 #[fce]
 pub fn register(peer_id: String) {
-    let mut data = global_data().lock().unwrap();
+    let mut data = global_data().lock();
 
     data.insert(peer_id, Status {is_registered: true});
 }
 
 #[fce]
 pub fn remove(peer_id: String) {
-    let mut data = global_data().lock().unwrap();
+    let mut data = global_data().lock();
 
     data.remove(peer_id.as_str());
 }
-
-

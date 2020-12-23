@@ -1,11 +1,11 @@
 [package]
-name = "wasm-greeting"
+name = "rbac_provider"
 version = "0.1.0"
 authors = ["Fluence Labs"]
 edition = "2018"
 
 [[bin]]
-name = "rbac"
+name = "rbac_provider"
 path = "src/main.rs"
 
 [dependencies]

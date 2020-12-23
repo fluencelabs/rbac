@@ -23,16 +23,21 @@ use fluence::WasmLoggerBuilder;
 use std::collections::HashMap;
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
+use fluence::CallParameters;
+use std::ops::Deref;
 
-static INSTANCE: OnceCell<Mutex<HashMap<String, Status>>> = OnceCell::new();
+static INSTANCE: OnceCell<Mutex<Option<Tetraplet>>> = OnceCell::new();
 
 #[fce]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Status {
-    pub is_registered: bool
+pub struct Tetraplet {
+    pub peer_pk: String,
+    pub service_id: String,
+    pub fn_name: String,
+    pub json_path: String,
 }
 
-fn global_data() -> &'static Mutex<HashMap<String, Status>> {
+fn global_data() -> &'static Mutex<Option<Tetraplet>> {
     INSTANCE.get_or_init(|| {
         <_>::default()
     })
@@ -46,29 +51,33 @@ pub fn main() {
 }
 
 #[fce]
-pub fn get_status(peer_id: String) -> Status {
+pub fn set_tetraplet(peer_id: String, service_id: String, fn_name: String, path: String) {
+    let mut data = global_data().lock();
+
+    let tetraplet = Tetraplet {
+        peer_pk: peer_id,
+        service_id,
+        fn_name,
+        json_path: path,
+    };
+
+    data.replace(tetraplet);
+}
+
+#[fce]
+pub fn is_authorized(auth: bool) -> bool {
     let data = global_data().lock();
 
-    match data.get(peer_id.as_str()) {
-        None => {
-            Status {
-                is_registered: false
-            }
+    match data.deref() {
+        None => false,
+        Some(t) => {
+            let call_parameters: CallParameters = fluence::get_call_parameters();
+            let st = &call_parameters.tetraplets[0][0];
+
+            return st.peer_pk == t.peer_pk && st.function_name == t.fn_name
+                && st.service_id == t.service_id &&
+                st.json_path == t.json_path;
         }
-        Some(status) => status.clone()
     }
 }
 
-#[fce]
-pub fn register(peer_id: String) {
-    let mut data = global_data().lock();
-
-    data.insert(peer_id, Status {is_registered: true});
-}
-
-#[fce]
-pub fn remove(peer_id: String) {
-    let mut data = global_data().lock();
-
-    data.remove(peer_id.as_str());
-}

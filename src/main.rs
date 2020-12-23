@@ -52,7 +52,7 @@ pub fn get_status(peer_id: String) -> Status {
     match data.get(peer_id.as_str()) {
         None => {
             Status {
-                is_registered: true
+                is_registered: false
             }
         }
         Some(status) => status.clone()

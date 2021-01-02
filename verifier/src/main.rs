@@ -76,7 +76,7 @@ pub fn is_authorized(auth: bool) -> bool {
 
             return st.peer_pk == t.peer_pk && st.function_name == t.fn_name
                 && st.service_id == t.service_id &&
-                st.json_path == t.json_path;
+                st.json_path == t.json_path && auth;
         }
     }
 }

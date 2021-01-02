@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use fluence::fce;
+use fluence::{fce, CallParameters};
 use fluence::WasmLoggerBuilder;
 
 use std::collections::HashMap;
@@ -43,8 +43,11 @@ pub fn main() {
 }
 
 #[fce]
-pub fn get_status(peer_id: String) -> Status {
+pub fn get_status() -> Status {
     let data = global_data().lock();
+
+    let call_parameters: CallParameters = fluence::get_call_parameters();
+    let peer_id = call_parameters.init_peer_id;
 
     match data.get(peer_id.as_str()) {
         None => {
@@ -60,12 +63,24 @@ pub fn get_status(peer_id: String) -> Status {
 pub fn register(peer_id: String) {
     let mut data = global_data().lock();
 
-    data.insert(peer_id, Status {is_registered: true});
+    let call_parameters: CallParameters = fluence::get_call_parameters();
+    let init_peer_id = call_parameters.init_peer_id;
+    let owner = call_parameters.service_creator_peer_id;
+
+    if (init_peer_id == owner || data.contains_key(&init_peer_id)) {
+        data.insert(peer_id, Status {is_registered: true});
+    }
 }
 
 #[fce]
 pub fn remove(peer_id: String) {
     let mut data = global_data().lock();
 
-    data.remove(peer_id.as_str());
+    let call_parameters: CallParameters = fluence::get_call_parameters();
+    let init_peer_id = call_parameters.init_peer_id;
+    let owner = call_parameters.service_creator_peer_id;
+
+    if (init_peer_id == owner || data.contains_key(&init_peer_id)) {
+        data.remove(peer_id.as_str());
+    }
 }

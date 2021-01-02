@@ -13,3 +13,4 @@ fluence = { git = "https://github.com/fluencelabs/rust-sdk", features = ["logger
 log = "0.4.11"
 once_cell = "1.5.2"
 parking_lot = "0.11.1"
+fce-sqlite-connector = "=0.1.3"
